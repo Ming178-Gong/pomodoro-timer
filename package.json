@@ -1,0 +1,39 @@
+{
+  "name": "pomodoro-timer",
+  "version": "1.0.0",
+  "description": "番茄钟桌面应用",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@electron-toolkit/eslint-config-ts": "^2.0.0",
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "playwright-core": "^1.60.0",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^3.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.4"
+  },
+  "build": {
+    "appId": "com.pomodoro.timer",
+    "productName": "番茄钟",
+    "mac": {
+      "category": "public.app-category.productivity"
+    }
+  }
+}
