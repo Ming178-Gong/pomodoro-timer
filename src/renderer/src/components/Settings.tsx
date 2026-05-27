@@ -1,23 +1,13 @@
 import { useState } from 'react'
 import { useTimerStore } from '../store/timerStore'
-
-interface FieldConfig {
-  key: 'workDuration' | 'shortBreakDuration' | 'longBreakDuration' | 'longBreakInterval'
-  label: string
-  unit: string
-  min: number
-  max: number
-}
-
-const fields: FieldConfig[] = [
-  { key: 'workDuration', label: '专注时长', unit: '分钟', min: 1, max: 90 },
-  { key: 'shortBreakDuration', label: '短休息时长', unit: '分钟', min: 1, max: 30 },
-  { key: 'longBreakDuration', label: '长休息时长', unit: '分钟', min: 5, max: 60 },
-  { key: 'longBreakInterval', label: '长休息间隔', unit: '个番茄', min: 2, max: 10 }
-]
+import { useI18n } from '../i18n/useI18n'
+import type { Language } from '../i18n'
 
 export default function Settings() {
   const store = useTimerStore()
+  const t = useI18n()
+  const language = useTimerStore((s) => s.language)
+
   const [values, setValues] = useState({
     workDuration: store.workDuration,
     shortBreakDuration: store.shortBreakDuration,
@@ -26,7 +16,16 @@ export default function Settings() {
   })
   const [saved, setSaved] = useState(false)
 
-  const handleChange = (key: FieldConfig['key'], val: number) => {
+  type DurationKey = 'workDuration' | 'shortBreakDuration' | 'longBreakDuration' | 'longBreakInterval'
+
+  const fields: { key: DurationKey; label: string; unit: string; min: number; max: number }[] = [
+    { key: 'workDuration',       label: t.settings.workDuration,       unit: t.settings.minutes,   min: 1,  max: 90 },
+    { key: 'shortBreakDuration', label: t.settings.shortBreakDuration, unit: t.settings.minutes,   min: 1,  max: 30 },
+    { key: 'longBreakDuration',  label: t.settings.longBreakDuration,  unit: t.settings.minutes,   min: 5,  max: 60 },
+    { key: 'longBreakInterval',  label: t.settings.longBreakInterval,  unit: t.settings.pomodoros, min: 2,  max: 10 }
+  ]
+
+  const handleChange = (key: DurationKey, val: number) => {
     setValues((v) => ({ ...v, [key]: val }))
     setSaved(false)
   }
@@ -38,15 +37,42 @@ export default function Settings() {
   }
 
   const handleClearRecords = () => {
-    if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+    if (confirm(t.settings.clearConfirm)) {
       useTimerStore.setState({ records: [] })
     }
   }
 
+  const languages: { code: Language; label: string; flag: string }[] = [
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'zh', label: '中文',    flag: '🇨🇳' }
+  ]
+
   return (
     <div className="settings-container">
-      <h2 className="stats-title">⚙️ 设置</h2>
+      <h2 className="stats-title">{t.settings.title}</h2>
 
+      {/* Language switcher */}
+      <div className="setting-item">
+        <div className="setting-label">
+          <span>{t.settings.language}</span>
+        </div>
+        <div className="lang-switcher">
+          {languages.map(({ code, label, flag }) => (
+            <button
+              key={code}
+              className={`lang-btn ${language === code ? 'active' : ''}`}
+              onClick={() => store.setLanguage(code)}
+            >
+              <span>{flag}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="settings-divider" />
+
+      {/* Duration settings */}
       <div className="settings-group">
         {fields.map(({ key, label, unit, min, max }) => (
           <div key={key} className="setting-item">
@@ -55,21 +81,12 @@ export default function Settings() {
               <span className="setting-unit">{unit}</span>
             </div>
             <div className="setting-control">
-              <button
-                className="adj-btn"
-                onClick={() => handleChange(key, Math.max(min, values[key] - 1))}
-              >−</button>
+              <button className="adj-btn" onClick={() => handleChange(key, Math.max(min, values[key] - 1))}>−</button>
               <span className="setting-value">{values[key]}</span>
-              <button
-                className="adj-btn"
-                onClick={() => handleChange(key, Math.min(max, values[key] + 1))}
-              >+</button>
+              <button className="adj-btn" onClick={() => handleChange(key, Math.min(max, values[key] + 1))}>+</button>
             </div>
             <input
-              type="range"
-              min={min}
-              max={max}
-              value={values[key]}
+              type="range" min={min} max={max} value={values[key]}
               onChange={(e) => handleChange(key, Number(e.target.value))}
               className="setting-slider"
             />
@@ -82,13 +99,13 @@ export default function Settings() {
         onClick={handleSave}
         style={saved ? { background: '#2a9d8f' } : {}}
       >
-        {saved ? '✓ 已保存' : '保存设置'}
+        {saved ? t.settings.saved : t.settings.save}
       </button>
 
       <div className="danger-zone">
-        <h3 className="danger-title">危险区域</h3>
+        <h3 className="danger-title">{t.settings.dangerZone}</h3>
         <button className="danger-btn" onClick={handleClearRecords}>
-          清空所有历史记录
+          {t.settings.clearRecords}
         </button>
       </div>
     </div>

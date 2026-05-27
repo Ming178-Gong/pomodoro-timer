@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { Language } from '../i18n'
 
 export type Phase = 'work' | 'shortBreak' | 'longBreak'
 
@@ -12,20 +13,23 @@ export interface PomodoroRecord {
 }
 
 interface TimerState {
-  // 设置
-  workDuration: number       // 分钟
+  // Settings
+  workDuration: number
   shortBreakDuration: number
   longBreakDuration: number
-  longBreakInterval: number  // 每 N 个番茄后长休息
+  longBreakInterval: number
 
-  // 计时器状态
+  // Timer state
   phase: Phase
   secondsLeft: number
   isRunning: boolean
-  pomodoroCount: number      // 当前会话番茄数
+  pomodoroCount: number
   currentTask: string
 
-  // 历史记录
+  // Language
+  language: Language
+
+  // Records
   records: PomodoroRecord[]
 
   // Actions
@@ -36,6 +40,7 @@ interface TimerState {
   tick: () => void
   completePomodoro: () => void
   setCurrentTask: (task: string) => void
+  setLanguage: (lang: Language) => void
   updateSettings: (settings: Partial<Pick<TimerState, 'workDuration' | 'shortBreakDuration' | 'longBreakDuration' | 'longBreakInterval'>>) => void
 }
 
@@ -52,6 +57,8 @@ export const useTimerStore = create<TimerState>()(
       isRunning: false,
       pomodoroCount: 0,
       currentTask: '',
+
+      language: 'en',
 
       records: [],
 
@@ -91,15 +98,15 @@ export const useTimerStore = create<TimerState>()(
 
         if (state.phase === 'work') {
           const newCount = state.pomodoroCount + 1
+          const t = state.language === 'zh' ? '专注工作' : 'Focus session'
           const record: PomodoroRecord = {
             id: Date.now().toString(),
             date: new Date().toISOString().split('T')[0],
             completedAt: new Date().toISOString(),
-            task: state.currentTask || '专注工作',
+            task: state.currentTask || t,
             duration: state.workDuration
           }
 
-          // 决定下一个阶段
           const nextPhase: Phase = newCount % state.longBreakInterval === 0
             ? 'longBreak'
             : 'shortBreak'
@@ -114,17 +121,16 @@ export const useTimerStore = create<TimerState>()(
             secondsLeft: nextDuration * 60
           })
         } else {
-          // 休息结束，回到工作
           set({ phase: 'work', secondsLeft: state.workDuration * 60 })
         }
       },
 
       setCurrentTask: (task) => set({ currentTask: task }),
+      setLanguage: (language) => set({ language }),
 
       updateSettings: (settings) => {
         const state = get()
         const newState = { ...settings }
-        // 同步更新当前剩余时间（如果计时器未运行）
         if (!state.isRunning) {
           if (settings.workDuration && state.phase === 'work') {
             Object.assign(newState, { secondsLeft: settings.workDuration * 60 })
@@ -144,6 +150,7 @@ export const useTimerStore = create<TimerState>()(
         shortBreakDuration: state.shortBreakDuration,
         longBreakDuration: state.longBreakDuration,
         longBreakInterval: state.longBreakInterval,
+        language: state.language,
         records: state.records
       })
     }

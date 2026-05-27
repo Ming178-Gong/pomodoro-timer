@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useTimerStore, PomodoroRecord } from '../store/timerStore'
+import { useI18n } from '../i18n/useI18n'
 
 function getDateStr(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -15,6 +16,7 @@ function getLast7Days(): string[] {
 
 export default function Stats() {
   const records = useTimerStore((s) => s.records)
+  const t = useI18n()
 
   const last7Days = useMemo(() => getLast7Days(), [])
 
@@ -30,48 +32,44 @@ export default function Stats() {
   const todayStr = getDateStr(new Date())
   const todayRecords = byDate[todayStr] || []
   const todayMinutes = todayRecords.reduce((sum, r) => sum + r.duration, 0)
-
   const totalPomodoros = records.length
   const totalMinutes = records.reduce((sum, r) => sum + r.duration, 0)
-
   const maxCount = Math.max(...last7Days.map((d) => (byDate[d] || []).length), 1)
-
-  const dayLabels = ['一', '二', '三', '四', '五', '六', '日']
 
   return (
     <div className="stats-container">
-      <h2 className="stats-title">📊 统计数据</h2>
+      <h2 className="stats-title">{t.stats.title}</h2>
 
-      {/* 今日概览 */}
+      {/* Summary cards */}
       <div className="stats-cards">
         <div className="stat-card">
           <div className="stat-value" style={{ color: '#e63946' }}>{todayRecords.length}</div>
-          <div className="stat-label">今日番茄</div>
+          <div className="stat-label">{t.stats.todayPomodoros}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: '#2a9d8f' }}>{todayMinutes}</div>
-          <div className="stat-label">今日分钟</div>
+          <div className="stat-label">{t.stats.todayMinutes}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: '#457b9d' }}>{totalPomodoros}</div>
-          <div className="stat-label">累计番茄</div>
+          <div className="stat-label">{t.stats.totalPomodoros}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value" style={{ color: '#f4a261' }}>{Math.round(totalMinutes / 60)}</div>
-          <div className="stat-label">累计小时</div>
+          <div className="stat-label">{t.stats.totalHours}</div>
         </div>
       </div>
 
-      {/* 近7天柱状图 */}
+      {/* 7-day bar chart */}
       <div className="chart-section">
-        <h3 className="chart-title">近 7 天</h3>
+        <h3 className="chart-title">{t.stats.last7Days}</h3>
         <div className="bar-chart">
           {last7Days.map((date, idx) => {
             const count = (byDate[date] || []).length
             const heightPct = maxCount > 0 ? (count / maxCount) * 100 : 0
             const isToday = date === todayStr
             const d = new Date(date + 'T00:00:00')
-            const dayIdx = (d.getDay() + 6) % 7 // 周一=0
+            const dayIdx = (d.getDay() + 6) % 7
 
             return (
               <div key={date} className="bar-item">
@@ -86,7 +84,7 @@ export default function Stats() {
                   />
                 </div>
                 <div className={`bar-label ${isToday ? 'today' : ''}`}>
-                  {dayLabels[dayIdx]}
+                  {t.stats.days[dayIdx]}
                 </div>
               </div>
             )
@@ -94,11 +92,11 @@ export default function Stats() {
         </div>
       </div>
 
-      {/* 今日任务列表 */}
+      {/* Today's records */}
       <div className="recent-section">
-        <h3 className="chart-title">今日记录</h3>
+        <h3 className="chart-title">{t.stats.todayRecords}</h3>
         {todayRecords.length === 0 ? (
-          <div className="empty-tip">今天还没有完成的番茄，加油！🍅</div>
+          <div className="empty-tip">{t.stats.emptyTip}</div>
         ) : (
           <ul className="record-list">
             {[...todayRecords].reverse().map((r) => (
@@ -106,9 +104,10 @@ export default function Stats() {
                 <span className="record-icon">🍅</span>
                 <span className="record-task">{r.task}</span>
                 <span className="record-time">
-                  {new Date(r.completedAt).toLocaleTimeString('zh-CN', {
-                    hour: '2-digit', minute: '2-digit'
-                  })}
+                  {new Date(r.completedAt).toLocaleTimeString(
+                    useTimerStore.getState().language === 'zh' ? 'zh-CN' : 'en-US',
+                    { hour: '2-digit', minute: '2-digit' }
+                  )}
                 </span>
               </li>
             ))}
